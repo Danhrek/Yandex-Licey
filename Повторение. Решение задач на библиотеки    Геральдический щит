@@ -1,0 +1,82 @@
+import json
+from PIL import Image, ImageDraw
+
+# Подписал чтобы было
+
+with open("coat_of_arms.json", "r") as f:
+    data = json.load(f)
+
+    background = data["background"]
+    border = data["border"]
+    emblem = data["emblem"]
+    symbols = data["symbols"]
+
+new_image = Image.new("RGB", (800, 800), background)
+draw = ImageDraw.Draw(new_image)
+
+# Border
+draw.rectangle((0, 0, 800, 800), fill=background, outline=border["color"], width=border["width"])
+
+# Emblem
+if emblem["shape"] == "circle":
+    x, y = emblem["position"]
+    draw.ellipse((x - emblem["radius"], y - emblem["radius"], x + emblem["radius"], y + emblem["radius"]),
+                 fill=emblem["color"])
+elif emblem["shape"] == "square":
+    x, y = emblem["position"]
+    draw.rectangle(
+        (x - (emblem["side"] / 2), y - (emblem["side"] / 2), x + (emblem["side"] / 2), y + (emblem["side"] / 2)),
+        fill=emblem["color"])
+
+
+def draw_star(color, position, size):
+    cx, cy = position
+    half = size / 2
+    x, y = cx - half, cy - half  # угол квадрата, как раньше
+    x1w = size / 5
+    y1w = size / 5
+
+    pst = [
+        (x + (x1w * 2.5), y),  # верхний луч
+        (x + (x1w * 2.9), y + (y1w * 2.1)),  # впадина
+        (x + (x1w * 5), y + (y1w * 2.5)),  # правый луч
+        (x + (x1w * 2.9), y + (y1w * 2.9)),  # впадина
+        (x + (x1w * 2.5), y + (y1w * 5)),  # нижний луч
+        (x + (x1w * 2.1), y + (y1w * 2.9)),  # впадина
+        (x, y + (y1w * 2.5)),  # левый луч
+        (x + (x1w * 2.1), y + (y1w * 2.1)),  # впадина
+    ]
+
+    draw.polygon(pst, fill=color)
+
+
+def draw_cross(color, position, size):
+    cx, cy = position  # центр креста
+    h = size / 2  # половина габарита (конец плеча)
+    t = size / 6  # ← было size/3, теперь в 2 раза тоньше
+    ht = t / 2
+
+    pst = [
+        (cx - ht, cy - h),  # верхнее плечо — левый верх
+        (cx + ht, cy - h),  # верхнее плечо — правый верх
+        (cx + ht, cy - ht),  # внутренний угол СВ
+        (cx + h, cy - ht),  # правое плечо — верх
+        (cx + h, cy + ht),  # правое плечо — низ
+        (cx + ht, cy + ht),  # внутренний угол ЮВ
+        (cx + ht, cy + h),  # нижнее плечо — правый низ
+        (cx - ht, cy + h),  # нижнее плечо — левый низ
+        (cx - ht, cy + ht),  # внутренний угол ЮЗ
+        (cx - h, cy + ht),  # левое плечо — низ
+        (cx - h, cy - ht),  # левое плечо — верх
+        (cx - ht, cy - ht),  # внутренний угол СЗ
+    ]
+    draw.polygon(pst, fill=color)
+
+
+for symbol in symbols:
+    if symbol["shape"] == "star":
+        draw_star(symbol["color"], symbol["position"], symbol["size"])
+    elif symbol["shape"] == "cross":
+        draw_cross(symbol["color"], symbol["position"], symbol["size"])
+
+new_image.save('narnia_shield.png')
